@@ -16,6 +16,15 @@ public enum PrepareStatementResult {
   /**
    * 语法错误
    */
-  PREPARE_SYNTAX_ERROR
+  PREPARE_SYNTAX_ERROR,
 
+  /**
+   * 字符串超出长度
+   */
+  PREPARE_STRING_TOO_LONG,
+
+  /**
+   * ID 必须为正数
+   */
+  PREPARE_NEGATIVE_ID
 }

@@ -22,11 +22,13 @@ public class Row implements Serializable {
    */
   private char[] email;
 
-  /*public Row(int id, char[] username, char[] email) {
+  public Row(int id, char[] username, char[] email) {
+    this.username = new char[Constant.COLUMN_USERNAME_SIZE];
+    this.email = new char[Constant.COLUMN_EMAIL];
     this.id = id;
-    this.username = username;
-    this.email = email;
-  }*/
+    this.setUsername(username);
+    this.setEmail(email);
+  }
 
   public Row() {
     this.username = new char[Constant.COLUMN_USERNAME_SIZE];

@@ -5,8 +5,10 @@ import sqlite.constant.MetaCommandResult;
 import sqlite.constant.PrepareStatementResult;
 import sqlite.constant.Statement;
 import java.util.Scanner;
+import static sqlite.StatementType.STATEMENT_INSERT;
 import static sqlite.constant.Constant.*;
 import static sqlite.constant.PrepareStatementResult.*;
+import static sqlite.utils.RowUtils.deserialize;
 import static sqlite.utils.RowUtils.serialize;
 
 /**
@@ -42,8 +44,17 @@ public class Main {
       switch (prepareStatement(inputLine, statement)) {
         case PREPARE_SUCCESS:
           break;
+        case PREPARE_NEGATIVE_ID:
+          System.out.println("ID must be positive");
+          continue;
+        case PREPARE_STRING_TOO_LONG:
+          System.out.println("String is too long");
+          continue;
+        case PREPARE_SYNTAX_ERROR:
+          System.out.println("Syntax error. Could not parse statement");
+          continue;
         case PREPARE_UNRECOGNIZED_STATEMENT:
-          System.out.println("error");
+          System.out.println("Unrecognized");
           continue;
           default:
       }
@@ -88,7 +99,7 @@ public class Main {
   private static ExecuteResult executeSelect(Statement statement, Table table) {
     Row row = null;
     for (int i = 0; i < table.getRows(); i = i + ROW_SIZE) {
-//      row = deserialize(table, i);
+      row = deserialize(table, i);
       System.out.println(row);
     }
     return ExecuteResult.EXECUTE_SUCCESS;
@@ -132,24 +143,49 @@ public class Main {
 
   /**
    * 对语句进行预处理
+   * INSERT语句: 调用INSERT预处理方法
+   * SELECT语句: 直接
    * @param inputLine 输入
    * @param statement 语句
    * @return 预处理结果
    */
   private static PrepareStatementResult prepareStatement(String inputLine, Statement statement) {
     if (inputLine.toUpperCase().startsWith(INSERT)) {
-      statement.setType(StatementType.STATEMENT_INSERT);
-      int num = inputLine.split("\\s+").length;
-      if (num < 4) {
-        return PREPARE_SYNTAX_ERROR;
-      }
-      return PREPARE_SUCCESS;
+      return prepareInsert(inputLine, statement);
     }
     if (inputLine.toUpperCase().startsWith(SELECT)) {
       statement.setType(StatementType.STATEMENT_SELECT);
       return PREPARE_SUCCESS;
     }
     return PREPARE_UNRECOGNIZED_STATEMENT;
+  }
+
+  /**
+   * 对INSERT语句预处理
+   * @param inputLine 输入
+   * @param statement 语句
+   * @return 处理结果
+   */
+  private static PrepareStatementResult prepareInsert(String inputLine, Statement statement) {
+    statement.setType(STATEMENT_INSERT);
+    String[] strings = inputLine.split("\\s+");
+    if (strings.length != 4) {
+      return PREPARE_SYNTAX_ERROR;
+    }
+    int id = Integer.valueOf(strings[1]);
+    char[] username = strings[2].toCharArray();
+    char[] email = strings[3].toCharArray();
+
+    if (id < 0) {
+      return PREPARE_NEGATIVE_ID;
+    }
+    if (username.length > COLUMN_USERNAME_SIZE || email.length > COLUMN_EMAIL) {
+      return PREPARE_STRING_TOO_LONG;
+    }
+    Row row = new Row(id, username, email);
+    statement.setRow2Insert(row);
+    return PREPARE_SUCCESS;
+
   }
 
   private static MetaCommandResult doMetaCommand(String inputLine, Table table) {
